@@ -23,11 +23,20 @@ data
 
 ENV Setup
 ---------
+If you haven't set your environment yet, go to logdelay and execute:
+```bash
+python -venv venv
+```
+
+Then, go to logdelay/ and execute
 ```bash
 source venv/bin/activate
-
-pip install jupyterlab
-jupyter serverextension enable --py jupyterlab --sys-prefix
+pip install -r requirements.txt
+```
+Some common tricks:
+```bash
+# Freeze new dependencies
+pip freeze > requirements.txt
 ```
 
 Notebooks
