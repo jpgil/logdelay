@@ -4,6 +4,23 @@ jgil@2019-12-17
 
 To enable the notebooks you need to activate the venv
 
+
+Dataset
+-------
+You need the file logdelay-original-dataset.tar.bz2 in logdelay/
+From here, you need to uncompress it to create the data tree structure:
+```bash
+tar -jxf logdelay-original-dataset.tar.bz2
+
+data
+|-- external
+|-- interim
+|-- processed
+`-- raw
+    |-- ALMA
+    `-- PARANAL
+```
+
 ENV Setup
 ---------
 ```bash
@@ -15,7 +32,7 @@ jupyter serverextension enable --py jupyterlab --sys-prefix
 
 Notebooks
 ------------
-Open Jupyter lab:
+Open Jupyter lab and browse into notebook folders:
 ```bash
 jupyter lab
 ```
