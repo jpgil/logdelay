@@ -21,5 +21,7 @@ def color_paranal(l):
 
 regex_antname = re.compile(r"(\W)(DA|DV|CM|PM)\d{2}")
 def color_alma(l):
+    if type(l) != type(""):
+        l = " "
     l = regex_antname.sub(r"\1ANTxx", l)
     return colorize(l)    
