@@ -101,18 +101,15 @@ def cleanse_parallel_artifacts(G, cleansing_tolerance=CLEANSING_TOLERANCE):
     Rationale: A loop doubles the frequency in (A,B) or (B,A)
     Instead, in a parallel exec, f(A,B) / f(B/A) != 2
     
-    Prove!!
-    """
+    Prove!! --- -FALSE!!!
     
-    G = G.copy()
-
-    # Remove START END?
-#     try:
-#         G.remove_node("_START_")
-#         G.remove_node("_END_")
-#     except:
-#         pass
-
+    Biut, for some strange reason the frequency of serial loops are 
+    always integer
+    
+    Prove!! --- FALSE!!!
+    
+    But... it seems that numbers are factirs of 0.5
+    """
     
     to_remove=[]
     for u in G.nodes():
@@ -120,8 +117,11 @@ def cleanse_parallel_artifacts(G, cleansing_tolerance=CLEANSING_TOLERANCE):
             if (u,v) in G.edges() and (v,u) in G.edges():
                 a, b = round( G.edges[u,v]["weight"], 9 ), round( G.edges[v,u]["weight"], 9 )
                 w1, w2 = max(a,b), min(a,b)
-                if abs( w1 - 2*w2 ) > 0 + cleansing_tolerance:
-                    to_remove.append((u, v))    
+#                 if abs( w1 - 2*w2 ) > 0 + cleansing_tolerance:
+                if a != round(a) and b != round(b):
+                    to_remove.append((u, v))   
+                    
+    print(to_remove)
     for u, v in to_remove:
         if (u,v) in G.edges:
             G.remove_edge(u,v)
