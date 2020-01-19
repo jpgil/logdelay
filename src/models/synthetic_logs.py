@@ -10,6 +10,9 @@ class synthetic_logs:
         self._used_symbols = []
         self.symbol = self.create_symbols( self._symbols )
         self.noisy = self.create_symbols( self._noisy )
+        self.last = []
+        self.add(self)
+
         
     def create_symbols(self, symbols):
         def combine(A,B):
@@ -28,16 +31,14 @@ class synthetic_logs:
         self.instances = [ self.generate_trace() for i in range(instances) ]
         return self.instances
 
+    def my_trace(self):
+        return [(-1, "... boring ...")]
+    
     def generate_trace(self):
-        if len(self._gens) == 0:
-            self.symbol = self.create_symbols( self._symbols )
-            return [ (i, next(self.symbol) ) for i in range(5) ]
-        else:
-            trace = []
-            for generator in self._gens:
-                trace = trace + generator.generate_trace()
-            return sorted(trace, key=lambda e: e[0])
-            #return trace
+        trace = []
+        for generator in self._gens:
+            trace = trace + generator.my_trace()
+        return sorted(trace, key=lambda e: e[0])
             
     def show_instances(self, head=10):
         for i in range( min(head, len(self.instances))  ):
@@ -57,17 +58,30 @@ class synthetic_logs:
             desc = {}
             desc['generators'] = []
             for gen in self._gens:
-                desc['generators'].append( gen.describe() )
+                desc['generators'].append( gen.my_describe() )
             return desc
+
+    def my_describe(self):
+        return {
+            'class': self.__class__.__name__,
+            '#symbols': 0,
+            'example': " (boring) "
+        }        
         
-class noisy_path:
-    def __init__(self, every, num_symbols, count):
+    def __mul__(self, other):
+        self.add(other)
+        return self
+        
+        
+class noisy_path(synthetic_logs):
+    def __init__(self, count=25, num_symbols=25, every=10):
+        super().__init__() 
         self.every = every
         self.num_symbols = num_symbols
         self.count = count
         self.noise = False
-        self.last = []
-    def generate_trace(self):
+        
+    def my_trace(self):
         if not self.noise:
             self.noise = [ next(self.log.noisy) for i in range(self.num_symbols) ]
         t = 0
@@ -80,23 +94,25 @@ class noisy_path:
         return self.last
 
     
-    def describe(self):
+    def my_describe(self):
         return {
             'class': self.__class__.__name__,
             '#symbols': len(self.noise),
             'example': " ".join([b for (a,b) in self.last[:10] ]),
         }
     
-class serial_path:
-    def __init__(self, size, every, error=0, probability=1):
+    
+    
+class single_path(synthetic_logs):
+    def __init__(self, size, every=10, error=10, probability=1):
+        super().__init__() 
         self.every = every
         self.size = size
         self.error = error
         self.probability = probability
         self.path = False
-        self.last = [ ]
         
-    def generate_trace(self):
+    def my_trace(self):
         if not self.path:
             self.path = [ next(self.log.symbol) for i in range(self.size) ]
         t = random.randint(0, self.error)
@@ -112,7 +128,7 @@ class serial_path:
             return []
 
     
-    def describe(self):
+    def my_describe(self):
         return {
             'class': self.__class__.__name__,
             '#symbols': len(self.path),
