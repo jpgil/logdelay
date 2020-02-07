@@ -30,41 +30,41 @@ def find_loops_in_path(p, succ_G, PAIRS_ID="all"):
 
     
     
-def find_loops_in_path_partialpairs(p, succ_G):
-    """
-    With partial pairs, if ABC is a loop in pairs of len L then 
-    f(A,B) = f(B,C) = L and f(B,A) = f(C,B) = L-1
-    """
-    logger = logging.getLogger( sys._getframe().f_code.co_name )
-    is_a_loop, L = False, 0
+# def find_loops_in_path_partialpairs(p, succ_G):
+#     """
+#     With partial pairs, if ABC is a loop in pairs of len L then 
+#     f(A,B) = f(B,C) = L and f(B,A) = f(C,B) = L-1
+#     """
+#     logger = logging.getLogger( sys._getframe().f_code.co_name )
+#     is_a_loop, L = False, 0
 
-    # Check if p is a loop
-    for a, b in [ (a,b) for a,b in zip( p[:-1], p[1:] )  ]:
+#     # Check if p is a loop
+#     for a, b in [ (a,b) for a,b in zip( p[:-1], p[1:] )  ]:
 
-        is_a_loop = True
-        setL = set()
-        if is_a_loop and (b, a) in succ_G.edges() and (a, b) in succ_G.edges():
-            Wab = succ_G[a][b]['weight'] # also, Wab=f by construction
-            Wba = succ_G[b][a]['weight']
+#         is_a_loop = True
+#         setL = set()
+#         if is_a_loop and (b, a) in succ_G.edges() and (a, b) in succ_G.edges():
+#             Wab = succ_G[a][b]['weight'] # also, Wab=f by construction
+#             Wba = succ_G[b][a]['weight']
             
-            # L test
-            """
-            f(A,B) = f(B,C) = L and f(B,A) = f(C,B) = L-1
-            """
-            L = Wab            
-            setL.add(L)
-            logger.debug( (a, b, Wab, L, Wba, L-1 ))
+#             # L test
+#             """
+#             f(A,B) = f(B,C) = L and f(B,A) = f(C,B) = L-1
+#             """
+#             L = Wab            
+#             setL.add(L)
+#             logger.debug( (a, b, Wab, L, Wba, L-1 ))
             
-            # Me falta chequear que L+1 y L-1 sean consistentes en todfo el path
-            if Wba != L-1:
-                is_a_loop = False
-        else:
-            is_a_loop = False     
+#             # Me falta chequear que L+1 y L-1 sean consistentes en todfo el path
+#             if Wba != L-1:
+#                 is_a_loop = False
+#         else:
+#             is_a_loop = False     
             
-    if is_a_loop and len(setL) != 1:
-        is_a_loop = False
+#     if is_a_loop and len(setL) != 1:
+#         is_a_loop = False
 
-    return is_a_loop, L
+#     return is_a_loop, L
 
 def find_loops_in_path_allpairs(p, succ_G):
     """
@@ -125,7 +125,7 @@ def remove_loops_in_trace(paths_loop, succ_G, PAIRS_ID="all"):
     loops_candidates = []
 
 
-    # Let's try something different... looks also backwardws (it worked!)
+    # Look also backwards (it worked!)
     for f, paths_f in paths_loop.items():
         
         for path in paths_f:
@@ -215,11 +215,12 @@ def evaluate_against (T, expected_paths):
             # Put in a graph
             succ_G = successorsGraph( succ_f )
 
-            # Detect loops first computing raw paths
+            # Detect loops first by computing raw paths
             paths_loop = infer_paths( split_in_freqGraph(  succ_G  ) )
             
             loops_this_trace, succ_G_acyclic = remove_loops_in_trace(paths_loop, succ_G, PAIRS_ID=PAIRS_ID)
 
+            # Add loops found in this pair to the loops in all traces
             for L,p in loops_this_trace:
                 pt = tuple(p)
                 if pt not in all_loops.keys():
@@ -227,7 +228,8 @@ def evaluate_against (T, expected_paths):
                 else:
                     all_loops[pt] += float(L)
             
-            # Claim: the graph should be cycle free. So, let's remove any trivial cycle AB BA not in loops!
+            # Claim: the graph should be 1-cycle free. So, let's remove any 1-cycle AB BA not in loops!
+            # I call this "untangle"
             succ_G_acyclic_forReal = nx.DiGraph()
             E = succ_G_acyclic.edges()
             for u, v in E:
@@ -247,25 +249,14 @@ def evaluate_against (T, expected_paths):
                     else:
                         G[u][v]["weight"] += Gw
 
-            # # Graph this trace
-            # # Untangled trace graph: If paths (u,z,v) and (u,v) exists, leave just (u,z,v)
-            # paths_this_trace = infer_paths( split_in_freqGraph(  succ_G_acyclic_forReal  ) )
-            # G_trace = minimally_connected( path_graph( paths_this_trace ) )
-
-            # # # Restore loops info
-            # # for path, L in all_loops.items():
-            # #     G_trace.add_edge( path[-1], path[0], weight=L )
-
-            # graph(G_trace)
-
-
-
         # Get paths with the acyclic graph for all pairs      
         paths = infer_paths( split_in_freqGraph( G ) )
         G = minimally_connected( path_graph( infer_paths( split_in_freqGraph(  G  ) ) ) )
-        # Restore loops info
-        for path, L in all_loops.items():
-            G.add_edge( path[-1], path[0], weight=L )
+        
+        # TRABAJAR EN ESTA
+#         # Restore loops info
+#         for path, L in all_loops.items():
+#             G.add_edge( path[-1], path[0], weight=L )
         graph(G)
 
 #         paths = { 1:[] }
@@ -431,7 +422,7 @@ def successorsGraph(successor_by_freq):
 # 1) The nodes of a single path in their equivalent pair has in_degree=0,1,2,...
 # 2) A path is composed for at least 2 ... 3? nodes
 
-def infer_paths(G_freq, min_clique_size=2):
+def infer_paths(G_freq, min_clique_size=3):
     logger = logging.getLogger( sys._getframe().f_code.co_name )
     logger.debug("Received a dict G with f=%s" % G_freq.keys())
 
