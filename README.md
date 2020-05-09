@@ -28,6 +28,11 @@ If you haven't set your environment yet, go to logdelay and execute:
 python -venv venv
 ```
 
+in Mac, you need to instally pygraphviz
+```
+pip install --install-option="--include-path=/usr/local/include/" --install-option="--library-path=/usr/local/lib/" pygraphviz
+```
+
 Then, go to logdelay/ and execute
 ```bash
 source venv/bin/activate

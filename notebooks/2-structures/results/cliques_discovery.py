@@ -106,7 +106,7 @@ def successorsGraph(successor_by_freq):
 # 1) The nodes of a single path in their equivalent pair has in_degree=0,1,2,...
 # 2) A path is composed for at least 2 ... 3? nodes
 
-def infer_paths(G_freq, min_clique_size=3):
+def infer_paths(G_freq, min_clique_size=2):
     logger = logging.getLogger( sys._getframe().f_code.co_name )
     logger.debug("Received a dict G with f=%s" % G_freq.keys())
 
