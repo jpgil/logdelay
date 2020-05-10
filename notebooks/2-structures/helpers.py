@@ -2,8 +2,24 @@ import networkx as nx
 import scipy
 import matplotlib.pyplot as plt
 
+from networkx.drawing.nx_agraph import write_dot
+from networkx.drawing.nx_agraph import to_agraph 
+from IPython.display import Image
+import pygraphviz as pgv
 
+def graph(G, color="#cccccc", filename="/tmp/simple.png"):
 
+    for u, v in G.edges:
+        if "weight" in G[u][v]:
+            G[u][v]["label"] = G[u][v]["weight"]
+    G.graph['graph']={'rankdir':'TD'}
+    G.graph['node']={'shape':'circle'}
+    G.graph['edges']={'arrowsize':'1.0'}
+
+    A = to_agraph(G) 
+    A.layout('dot')                                                                 
+    A.draw(filename) 
+    display(Image(filename))
 
 # Stolen from https://stackoverflow.com/questions/12836385/how-can-i-interleave-or-create-unique-permutations-of-two-strings-without-recur/12837695
 # More doc at http://www.cs.utsa.edu/~wagner/knuth/fasc2b.pdf

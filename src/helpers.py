@@ -6,7 +6,9 @@ import pygraphviz as pgv
 def graph(G, color="#cccccc", filename="/tmp/simple.png"):
 
     for u, v in G.edges:
-        G[u][v]["label"] = G[u][v]["weight"]
+        if "weight" in G[u][v]:
+            G[u][v]["label"] = G[u][v]["weight"]
+        
     G.graph['graph']={'rankdir':'TD'}
     G.graph['node']={'shape':'circle'}
     G.graph['edges']={'arrowsize':'1.0'}
