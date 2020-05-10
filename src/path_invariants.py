@@ -171,13 +171,14 @@ def paths_from_trace(C):
 def paths_in_components( G ):
     paths_found = []
     
-    C=nx.connected_components( G.to_undirected() )
+    C=cliques( G.to_undirected() )
+
     for Vq in C:
         H = G.copy()
         for node in set(H.nodes).difference( set(Vq) ):
             H.remove_node(node)
         logger.debug( "searching in %s" % H.nodes )
-        if path_condition(H):
+        if len(Vq) > 1 and path_condition(H):
             path = [ u for u, InDeg  in  sorted( H.in_degree() , key=lambda u: u[1], reverse=False)]
             u = list(H.nodes)[0]
             r = H[u][u]["weight"]
@@ -186,3 +187,32 @@ def paths_in_components( G ):
     return paths_found
 
         
+def path_invariants( Log ):
+    G=successor_graph("")
+
+    # For each trace on the log
+    for T in Log:
+
+        # Take his {P} paths based in loop recovery method
+        paths = paths_from_trace(T)
+
+        # Take his successor graph
+        H = successor_graph(T)
+
+        # And for every such P, lower layer is removed from successor graph
+        for r, P in paths:
+            for i in range(0, len(P)-1):
+                if P[1] in P[0]:
+                    H.remove_edge(P[0],P[1])
+
+        # Add merge all resulting graphs            
+        G = add_graphs(G, H)
+
+    # Finally, search paths in connected component for every layer in the resulting graph
+
+    invariants=[]
+    all_weights = set( [G[u][v]["weight"] for u, v in G.edges() ] )
+    for f in all_weights:
+        invariants += paths_in_components( f_layer(f, G) )
+
+    return invariants
