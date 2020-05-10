@@ -153,6 +153,7 @@ def paths_from_trace(C):
     sgC2 = successor_graph( C+C )
     weights = set( [sgC2[u][v]["weight"] for u, v in sgC2.edges() ] )
     unique_cliques = set([ tuple( sorted(clique) ) for f in weights for clique in cliques( f_layer(f, sgC2).to_undirected() )  ])
+#     components = set([ tuple( sorted(clique) ) for f in weights for clique in cliques( f_layer(f, sgC2).to_undirected() )  ])
 
     for Vq in unique_cliques:
         H = sgC2.copy()
@@ -166,3 +167,22 @@ def paths_from_trace(C):
             paths_found.append( (r, path) )
             
     return paths_found
+
+def paths_in_components( G ):
+    paths_found = []
+    
+    C=nx.connected_components( G.to_undirected() )
+    for Vq in C:
+        H = G.copy()
+        for node in set(H.nodes).difference( set(Vq) ):
+            H.remove_node(node)
+        logger.debug( "searching in %s" % H.nodes )
+        if path_condition(H):
+            path = [ u for u, InDeg  in  sorted( H.in_degree() , key=lambda u: u[1], reverse=False)]
+            u = list(H.nodes)[0]
+            r = H[u][u]["weight"]
+            paths_found.append( (r, path) )
+            
+    return paths_found
+
+        
