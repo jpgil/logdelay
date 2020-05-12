@@ -4,7 +4,7 @@ import networkx as nx
 
 class AllenLog():
     L_serials=['12356', '12456', '12476']
-    L_loops  =['452', '524', '523', '53', '7']
+    L_loops  =['452', '524', '523', '53', '77']
     
     def __init__(self, path_length=3, N=10, loop_repeats=4, alphabet=None):
         """
@@ -22,15 +22,32 @@ class AllenLog():
             raise ValueError("symbols in mapping must be unique")
         
         self.mapping = { key: list(value) for key, value in mapping.items() }
-        L = self.L_serials + self.L_loops
         
+        # Generate associated graph
+        self.generate_graph()
+        
+        # Generate the log 
+        self.generate_log()
+
+        
+    def generate_graph(self):
+        L = self.L_serials + self.L_loops
         self.graph = nx.DiGraph()
         for T in L:
             for u, v in zip(T[:-1], T[1:]):
-                self.graph.add_edge(u, v)
-                
-        # Strategy: generate once, then just read
-        self.generate()
+                # Here I expand the mapping for u
+                for a, b in zip( self.mapping[u][:-1], self.mapping[u][1:] ):
+                    self.graph.add_edge( "%s (%s)" % (a, u) , "%s (%s)" % (b, u))
+#                     self.graph.add_edge(a, b)
+
+                    # Here I expand the mapping for v
+                for a, b in zip( self.mapping[v][:-1], self.mapping[v][1:] ):
+                    self.graph.add_edge( "%s (%s)" % (a, v) , "%s (%s)" % (b, v))
+#                     self.graph.add_edge(a, b)
+                    
+                # And now I connect the paths in the extremes
+                self.graph.add_edge("%s (%s)" % (self.mapping[u][-1], u), "%s (%s)" % (self.mapping[v][0], v) )
+
         
     @property
     def log(self):
@@ -85,13 +102,15 @@ class AllenLog():
         return walk
     
 
-    def generate(self):
+    def generate_log(self):
         L = []
         for i in range(self.N):
             T = "".join( self.trace() )
             L.append(T)
         self.generated_log = L
 
+        
+        
         
 class Alphabet():
     _symbols = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
