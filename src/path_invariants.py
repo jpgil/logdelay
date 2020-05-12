@@ -189,8 +189,15 @@ def paths_in_cliques( G ):
             
     return paths_found
 
+
+
         
+import multiprocessing
+
 def path_invariants( Log ):
+    return infer_paths_by_adding_graphs(Log)
+
+def infer_paths_by_adding_graphs(Log):
     G=nx.DiGraph()
 
     # For each trace on the log
@@ -209,6 +216,30 @@ def path_invariants( Log ):
     invariants=[]
     all_weights = set( [G[u][v]["weight"] for u, v in G.edges() ] )
     for f in all_weights:
+        invariants += paths_in_cliques( f_layer(f, G) )
+
+    return invariants
+
+
+
+def infer_paths_by_combining_loops(Log):
+    G=successor_graph("")
+    for T in Log:
+        paths = paths_from_trace(T)
+
+        # Here I sum the multi path graph
+        for r, P in paths:
+            for i in range(0,int(r)):
+                G = add_graphs(G, successor_graph(P) )
+
+    # Search paths in every layer
+    weights = set( [G[u][v]["weight"] for u, v in G.edges() ] )
+
+    # for f in weights:
+    #     graph( f_layer(f, G) )
+
+    invariants=[]
+    for f in weights:
         invariants += paths_in_cliques( f_layer(f, G) )
 
     return invariants
