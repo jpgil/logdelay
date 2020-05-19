@@ -198,27 +198,26 @@ def path_invariants( Log ):
     return infer_paths_by_adding_graphs(Log)
 
 def infer_paths_by_adding_graphs(Log):
+    
     G=nx.DiGraph()
 
     # For each trace on the log
     for T in Log:
 
-        # Take his {P} paths based in loop recovery method, 
-        paths = paths_from_trace(T)
-
-        # Take his successor graph, duplicated!!
+        # Take his successor graph, duplicated (to ensure full merges)
         H = successor_graph(T+T)
 
         # Add merge all resulting graphs            
         G = add_graphs(G, H)
 
-    # Finally, search paths in connected component for every layer in the resulting graph
-    invariants=[]
-    all_weights = set( [G[u][v]["weight"] for u, v in G.edges() ] )
-    for f in all_weights:
-        invariants += paths_in_cliques( f_layer(f, G) )
+    inferred_paths=[]; all_weights = set( [G[u][v]["weight"] for u, v in G.edges() ] )
 
-    return invariants
+    # Finally, search paths in connected component for every layer in the resulting graph
+    for f in all_weights:
+        inferred_paths += paths_in_cliques( f_layer(f, G) )
+
+    # Return the inferred paths
+    return inferred_paths
 
 
 
