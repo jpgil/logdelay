@@ -28,8 +28,14 @@ If you haven't set your environment yet, go to logdelay and execute:
 python -venv venv
 ```
 
-in Mac, you need to instally pygraphviz
+in Mac, you need to instally pygraphviz and networkx
 ```
+# option 1:
+brew install graphviz
+pip install pygraphviz
+pip install networkx
+
+# option 2, seems to not work anymore
 pip install --install-option="--include-path=/usr/local/include/" --install-option="--library-path=/usr/local/lib/" pygraphviz
 ```
 
