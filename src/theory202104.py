@@ -67,6 +67,7 @@ def sequence_cardinality(S, T):
     cardinality=int(len(intersection) / len(S)  )
     return cardinality if S*cardinality==intersection else -1
 
+
 # Pair graphs
 
 def _graph_from_dict(P, weights=False):
@@ -99,6 +100,49 @@ def n_layer(G, n):
     G.pd = pandasPair( P  )
     return G
 
+def cliques_from_layer(G):
+    CliqueSet = list( nx.algorithms.clique.find_cliques( G.to_undirected() ) )
+    return CliqueSet
+
+def induced_graph(G, nodes):
+    indG = G.copy()
+
+    # remove the nodes not in this clique 
+    for node in set(G.nodes).difference( set(nodes) ):
+        indG.remove_node(node)       
+    return indG
+    
+def sequences_from_pair_graph(G):
+    smallG = non_negative_graph(G)
+    seqs = {}
+
+    unique_layers = smallG.pd['pairs'].unique()
+    for n in unique_layers:
+        logger.debug('Looking for layer={}'.format(n))
+        layer_seqs = []
+
+        Glayer =  n_layer(smallG, n)
+
+        cliques = cliques_from_layer( Glayer )
+        logger.debug('Cliques for layer {}: {}'.format(n, cliques))
+        
+        for clique in cliques:
+            deg_by_node = sorted( induced_graph(Glayer, clique).in_degree() , key=lambda u: u[1], reverse=False)
+            nodes = [ (node,deg) for node,deg in deg_by_node if node in clique ]
+
+            # Verify property of pair graphs
+            naturals = range(1, len(nodes)+1)
+            if not all( [in_degree == i-1 for i, (_, in_degree) in zip( naturals , nodes)] ) :
+                logger.error("Condition '1) InDegree' not met. %s cannot be ordered as a sequence." % clique )
+                raise Exception
+            else:                
+                layer_seqs.append( [ x for x,_ in nodes ] )
+        
+        if len(layer_seqs):
+            seqs[n] = layer_seqs
+            
+    return seqs
+        
 
 # Helpers
 
