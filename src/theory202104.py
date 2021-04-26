@@ -34,7 +34,7 @@ def pairs_in_trace(T, cardinality=pair_cardinality):
 
     # The alphabet in T
     Sigma_T = list( set( [x for x in T] ) )
-    for i in range( len(Sigma_T) -1 ):
+    for i in range( len(Sigma_T) ):
         a = Sigma_T[i]
 
         Pairs_in_T[ (a,a) ] = cardinality(a, a, T)
@@ -68,15 +68,132 @@ def sequence_cardinality(S, T):
     return cardinality if S*cardinality==intersection else -1
 
 
+
 # Pair graphs
 
+# Important function!
+class pairDiGraph( nx.DiGraph ):
+    
+    # Strong adding. 
+    # Mi intuicion dice que esto se puede optimizar solo buscando los positivos
+    # E inferir los 0  y los -1
+    # Por ahora haré la fuerza bruta
+    def __add__(self,other):
+        if type(self) != type(other):
+            raise Exception('second argument is not a {}'.format(type(self)))
+            
+        H = pairDiGraph()
+        Sigma = set(self.nodes).union(set(other.nodes))
+        for a in Sigma:
+            for b in Sigma:
+                # if the pair is broken (ab in different traces):
+                if (a in self.nodes and b not in self.nodes) or \
+                   (a in other.nodes and b not in other.nodes) or \
+                   (b in self.nodes and a not in self.nodes) or \
+                   (b in other.nodes and a not in other.nodes):
+                    n1 = -1
+                    n2 = -1
+                # The pair can be found in at least one trace
+                else:
+                    try:
+                        n1 = self[a][b]['weight']
+                    except:
+                        # (ab) not in self, then n=0
+                        n1 = 0
+                    try:
+                        # (ab) not in other, then n=0
+                        n2 = other[a][b]['weight']
+                    except:
+                        n2 = 0
+                        
+                # Add cardinalidity
+                if min(n1,n2) < 0:
+                    n = -1
+                else:
+                    n = n1 + n2
+                H.add_edge(a,b,weight=n)
+            
+        H.pd = pd.DataFrame.from_dict( 
+            { (a,b):H[a][b]['weight'] for a,b in H.edges }, 
+            orient='index', 
+            columns=['pairs']
+        )
+        return H  
+                        
+                    
+        
+#         # edges for self - other
+#         H = self.copy()
+
+#         # edges for other - self
+#         Gother_only=other.subgraph( set(other.nodes).difference(set(self.nodes)) )
+#         for (a,b) in Gother_only.edges:
+#             H.add_edge( a, b, weight=Gother_only[a][b]['weight'] )
+
+#         # intersection
+#         common = set(self.nodes).intersection(set(other.nodes))
+#         for a in common:
+#             for b in common.difference(set([a])):
+#                 if min( self[a][b]['weight'], other[a][b]['weight'] ) < 0:
+#                     H[a][b]['weight'] = -1
+#                 else:
+#                     H[a][b]['weight'] = self[a][b]['weight'] + other[a][b]['weight']
+            
+        # Cardinality for self - other
+        # Done by construction of H
+        # pdG1 = self.pd
+
+        # Cardinality for second graph
+        # pdG2 = other.pd
+
+        # Update 'self' cardinality base on the new 'other' evidence.
+        # UPGRADE THIS TO USE pd.MultiIndex.from_tuples
+        
+#         non_negative_pairs = self.pd[ self.pd['pairs'] >= 0 ].to_dict()['pairs']
+#         logger.debug('non_negative_pairs={}'.format(non_negative_pairs))
+        
+#         newCommonPairs = {}
+#         for a,b in non_negative_pairs.keys():
+#             logger.error(( a,b, non_negative_pairs[(a,b)] ))
+            
+#             if min( self[a][b]['weight'], other[a][b]['weight'] ) == -1:
+#                 newCommonPairs[(a,b)] = -1
+#             else:
+#                 newCommonPairs[(a,b)] = self[a][b]['weight'] + other[a][b]['weight']
+#             logger.error(( a,b, newCommonPairs[(a,b)] ))
+
+        
+
+        # THIS SHOULD BE REMOVED WHEN OPTIMIZE THIS FUNCTION.
+        # Calculate cardinality of newly created pairs.
+        # In strong adding, those are all -infty
+#         newnodes = []
+#         for newnode in set(other.nodes).difference(self.nodes):
+#             for oldnode in self.nodes:
+#                 newnodes.append( (newnode, oldnode) )
+#                 newnodes.append( (oldnode, newnode) )
+#                 H.add_edge(newnode, oldnode)
+#                 H.add_edge(oldnode, newnode)
+
+#         newnodesPD = pd.DataFrame.from_dict( 
+#             { (a[0],a[1]):-1 for a in newnodes }, 
+#             orient='index', 
+#             columns=['pairs'] 
+#         )
+#         H.pd = pd.concat([self.pd, other.pd, newnodesPD])
+#         for (a,b), card in H.pd.iterrows():
+#             H[a][b]['weight'] =  card['pairs']
+
+
+
 def _graph_from_dict(P, weights=False):
-    G=nx.DiGraph()
+    G=pairDiGraph()
     for (a,b), n in P.items():
         if weights:
             G.add_edge(a, b, weight=n)
         else:
             G.add_edge(a, b)
+    G.pd = pandasPair( P  )
     return G
 
 def pair_graph(T, cardinality=pair_cardinality):
@@ -85,20 +202,20 @@ def pair_graph(T, cardinality=pair_cardinality):
     
     P = pairs_in_trace(T, cardinality=cardinality)
     G = _graph_from_dict(P, weights=True)
-    G.pd = pandasPair( P  )
     return G
 
 def non_negative_graph(G):
     P = G.pd[ G.pd['pairs'] >= 0 ].to_dict()['pairs']
     G = _graph_from_dict(P, weights=True)
-    G.pd = pandasPair( P  )
     return G
 
 def n_layer(G, n):
     P = G.pd[ G.pd['pairs'] == n ].to_dict()['pairs']
     G = _graph_from_dict(P)
-    G.pd = pandasPair( P  )
     return G
+
+
+# Cliques and sequences
 
 def cliques_from_layer(G):
     CliqueSet = list( nx.algorithms.clique.find_cliques( G.to_undirected() ) )
