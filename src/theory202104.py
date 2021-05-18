@@ -269,3 +269,10 @@ def pandasPair(P):
         orient='index', 
         columns=['pairs'] 
     )
+
+# Main result:
+def sequences_from_log( L ):
+    Gp = pair_graph('')
+    for Ti in L:
+        Gp = Gp + pair_graph(Ti)
+    return sequences_from_pair_graph( Gp )
