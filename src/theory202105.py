@@ -22,29 +22,50 @@ def pair_cardinality(x, y, T):
     cardinality=int(len(intersection) / 2)
     return cardinality if [x,y]*cardinality==intersection else -1
 
-def pairs_in_trace(T, cardinality=pair_cardinality):
-    '''
-    Extract the cardinality of each pair in T
-    
-    By default cardinality=pair_cardinality , the strong cardinality
-    
-    Returns a dict[(a,b)] = cardinality(a,b,T)
-    '''
+
+def pairs_in_trace(Trace, cardinality=pair_cardinality):
+    logging.debug(f'NEW Trace: size={len(Trace)}')
     Pairs_in_T = {}
 
-    # The alphabet in T
-    Sigma_T = list( set( [x for x in T] ) )
-    for i in range( len(Sigma_T) ):
-        a = Sigma_T[i]
+    # Fill freq table
+    
+    freq_of_char = {}
+    for a in Trace:
+        freq_of_char[a] = freq_of_char.get(a, 0) + 1    
+    logging.debug('The frequencies found are {} '.format( set(freq_of_char.values()) ))
+        
+    # split the trace in a hash table, identified by frequency. 
+    # This step preserves order but reduces trace size.
+    
+    hashTrace = {}
+    for a in Trace:
+        f = freq_of_char[a]
+        hashTrace[f] = hashTrace.get(f, []) + [a] if type(a)!=type([]) else a
+        
+    # For each sliced trace compute all positive pairs
+    for f, T in hashTrace.items():
+#         logging.debug(f'Trace={T}')
+        
+        # Below is the old algorithm, but restricted to same freq symbols.
 
-        Pairs_in_T[ (a,a) ] = cardinality(a, a, T)
-        for b in Sigma_T[i+1:]:
-            Pairs_in_T[ (a,b) ] = cardinality(a, b, T)
-            # asymmetric paired property: if (a,b) is paired in T the (b,a) is not
-            if Pairs_in_T[ (a,b) ]>=0:
-                Pairs_in_T[ (b,a) ] = -1  
-            else: 
-                Pairs_in_T[ (b,a) ] = cardinality(b, a, T)
+        # The alphabet in T
+        Sigma = list(set( [x for x in T] ))
+    
+        for i in range( len(Sigma) ):
+            a = Sigma[i]
+
+            Pairs_in_T[ (a,a) ] = cardinality(a, a, T)
+            for b in Sigma[i+1:]:
+                Pairs_in_T[ (a,b) ] = cardinality(a, b, T)
+                # asymmetric paired property: if (a,b) is paired in T the (b,a) is not
+                if Pairs_in_T[ (a,b) ]>=0:
+                    Pairs_in_T[ (b,a) ] = -1  
+                else: 
+                    Pairs_in_T[ (b,a) ] = cardinality(b, a, T)
+
+        logging.debug(f'Size of slice f={f}: {len(T)}, with {len(set(T))} unique symbols.')
+
+    logging.debug(f'Total pairs for the whole Trace = {len(Pairs_in_T)}')
     return Pairs_in_T
 
 
@@ -119,14 +140,14 @@ def _graph_from_dict(P, weights=False):
         G.addPd()
     return G
 
-def pair_graph(T, cardinality=pair_cardinality):
-    print('DELETE ME pair_graph')
-    if type(T) == type(''):
-        return pair_graph(list(T.strip()))
+# def pair_graph(T, cardinality=pair_cardinality):
+#     print('DELETE ME pair_graph')
+#     if type(T) == type(''):
+#         return pair_graph(list(T.strip()))
     
-    P = pairs_in_trace(T, cardinality=cardinality)
-    G = _graph_from_dict(P, weights=True)
-    return G
+#     P = pairs_in_trace(T, cardinality=cardinality)
+#     G = _graph_from_dict(P, weights=True)
+#     return G
 
 
 def positive_graph(T, cardinality=pair_cardinality):
